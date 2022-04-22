@@ -1,10 +1,13 @@
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
+let textureCobble = new Image();
+textureCobble.src = "Textures/cobble.png";
+
 let objects = [];
 let lines = [];
 let keys = [];
-
+let showHitboxes = true;
 var mousePos = {
   x: 0,
   y: 0,
@@ -27,6 +30,7 @@ class Character {
     this.pos.y = y;
     this.width = width;
     this.height = height;
+
     objects.push(this);
   }
   show() {
@@ -48,17 +52,29 @@ class Structure {
     y: 0,
   };
   health = 1000;
-  constructor(x, y, height, width) {
+  constructor(x, y, height, width, texture) {
     this.pos.x = x;
     this.pos.y = y;
     this.width = width;
     this.height = height;
+    this.texture = texture;
     objects.push(this);
   }
   show() {
+    ctx.strokeStyle = "none";
+    if (showHitboxes === true) {
+      ctx.strokeStyle = "red";
+    }
     ctx.beginPath();
-    ctx.strokeStyle = "red";
     ctx.rect(
+      this.pos.x - this.width / 2,
+      this.pos.y - this.height / 2,
+      this.width,
+      this.height
+    );
+    var pattern = ctx.createPattern(this.texture, "repeat");
+    ctx.fillStyle = pattern;
+    ctx.fillRect(
       this.pos.x - this.width / 2,
       this.pos.y - this.height / 2,
       this.width,
@@ -113,7 +129,8 @@ function rayCast(start, dir, other) {
 
 let Player = new Character(500, 500, 30, 30);
 let Enemy = new Character(800, 300, 30, 30);
-let Wall = new Structure(400, 400, 100, 100);
+let wall1 = new Structure(400, 400, 100, 20, textureCobble);
+let wall2 = new Structure(459, 360, 20, 100, textureCobble);
 
 function moveCharacter(Object, friction) {
   if (keys["w"]) {
@@ -213,6 +230,13 @@ function update() {
 update();
 document.body.addEventListener("keydown", function (e) {
   keys[e.key] = true;
+  if (e.key === "h") {
+    if (showHitboxes === true) {
+      showHitboxes = false;
+    } else {
+      showHitboxes = true;
+    }
+  }
 });
 document.body.addEventListener("keyup", function (e) {
   keys[e.key] = false;
@@ -239,7 +263,6 @@ function Dir(origin, other) {
 //     angle = degrees_to_radians(angle)
 //     Object.pos.x += Math.cos(angle) * Object.speed;
 //     Object.pos.y += Math.sin(angle) * Object.speed;
-//     update()
 // }
 
 function dist(a, b) {
