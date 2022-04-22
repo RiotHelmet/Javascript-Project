@@ -15,24 +15,49 @@ class Character {
         x : 0,
         y : 0
     }
-    speed = 3
+    speed = 5
     velocity = {
         x : 0,
         y : 0
     }
     health  = 1000
     Ammo = 20
-    constructor(x, y) {
+    constructor(x, y, height, width) {
         this.pos.x = x
         this.pos.y = y
+        this.width = width
+        this.height = height
         objects.push(this)
     }
     show() {
         ctx.beginPath();
-        ctx.rect(this.pos.x - 15, this.pos.y - 15, 30, 30)
+        ctx.strokeStyle = "black"
+        ctx.rect(this.pos.x - this.width/2, this.pos.y - this.height/2, this.width, this.height)
         ctx.stroke();
     }
 }
+
+class Structure {
+    pos = {
+        x : 0,
+        y : 0
+    }
+    health  = 1000
+    constructor(x, y, height, width) {
+        this.pos.x = x
+        this.pos.y = y
+        this.width = width
+        this.height = height
+        objects.push(this)
+    }
+    show() {
+        ctx.beginPath();
+        ctx.strokeStyle = "red"
+        ctx.rect(this.pos.x - this.width/2, this.pos.y - this.height/2, this.width, this.height)
+        ctx.stroke();
+    }
+}
+
 
 
 function rayCast(start ,dir , other) {
@@ -78,8 +103,9 @@ function rayCast(start ,dir , other) {
 
 
 
-let Player = new Character(500, 500)
-let Enemy = new Character(800, 300)
+let Player = new Character(500, 500, 30, 30)
+// let Enemy = new Character(800, 300, 30, 30)
+let Wall = new Structure(400, 400, 100, 100)
 
 function moveCharacter(Object, friction) {
     if(keys["w"]){
@@ -101,8 +127,62 @@ function moveCharacter(Object, friction) {
     }
     Object.velocity.x *= friction
     Object.velocity.y *= friction
-    Object.pos.x += Object.velocity.x
-    Object.pos.y += Object.velocity.y
+    console.log(collisionDetection(Player))
+    if(collisionDetection(Player)[1] !== "left" && (collisionDetection(Player)[1] !== "right")) {
+        Object.pos.x += Object.velocity.x
+    } else if(collisionDetection(Player)[1] !== "left"){
+        if(Object.velocity.x > 0) {
+            Object.pos.x += Object.velocity.x
+        }
+    } else if(collisionDetection(Player)[1] !== "right"){
+        if(Object.velocity.x < 0) {
+            Object.pos.x += Object.velocity.x
+        }
+    }
+
+    if(collisionDetection(Player) !== "y") {
+        Object.pos.y += Object.velocity.y
+    }
+}
+
+function collisionDetection(thisObject) {
+
+    let xCollision = false
+    let yCollision = false
+    let returnVar = ""
+    objects.forEach(Object => {
+        if(thisObject !== Object) {
+            // pos = new Structure(Object.pos.x, Object.pos.y, Object.height/2, Object.width/2)
+            
+            if(thisObject.pos.x < (Object.pos.x + Object.width/2) + thisObject.width/2 && thisObject.pos.x > (Object.pos.x - Object.width/2)  - thisObject.width/2 ) {
+                // console.log("Collision X")
+                xCollision = true
+            }
+            if(thisObject.pos.y < (Object.pos.y + Object.height/2) + thisObject.height/2 && thisObject.pos.y > (Object.pos.y - Object.height/2)  - thisObject.height/2 ) {
+                // console.log("Collision Y")
+                yCollision = true
+            }
+            }
+            if(xCollision === true && yCollision === true) {
+                if(thisObject.pos.y > Object.pos.y + Object.height/2 + thisObject.height/2 && thisObject.pos.y < Object.pos.y - Object.height/2 - thisObject.height/2) {
+                    if(thisObject.pos.x > Object.pos.x) {
+                        returnVar = ["x", "right"]
+                    }
+                    if(thisObject.pos.x < Object.pos.x) {
+                        returnVar = ["x", "left"]
+                    }
+                } 
+                if(thisObject.pos.x > Object.pos.x + Object.width/2 + thisObject.width/2 && thisObject.pos.x < Object.pos.x - Object.width/2 - thisObject.width/2) {
+                    if(thisObject.pos.y > Object.pos.y) {
+                        returnVar = ["y", "up"]
+                    }
+                    if(thisObject.pos.y < Object.pos.y) {
+                        returnVar = ["y", "down"]
+                    }
+                }
+            }
+    });
+    return returnVar
 }
 
 canvas.addEventListener("mousemove", function (e) {
@@ -113,8 +193,9 @@ mousePos.y = e.offsetY;
 function update() {
     requestAnimationFrame(update)
 
-    moveCharacter(Player, 0.90)
-    rayCast(Player, Dir(Player.pos, mousePos))
+    moveCharacter(Player, 0.93)
+    collisionDetection(Player)
+    // rayCast(Player, Dir(Player.pos, mousePos))
 
 
     ctx.beginPath();
