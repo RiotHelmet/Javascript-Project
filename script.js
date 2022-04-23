@@ -5,6 +5,7 @@ let textureCobble = new Image();
 textureCobble.src = "Textures/cobble.png";
 
 let objects = [];
+let Rays = [];
 let lines = [];
 let keys = [];
 let showHitboxes = true;
@@ -12,6 +13,64 @@ var mousePos = {
   x: 0,
   y: 0,
 };
+
+var mouseDown = false;
+
+class rayHit {
+  pos = {
+    x: 0,
+    y: 0,
+  };
+  constructor(x, y, height, width) {
+    this.pos.x = x;
+    this.pos.y = y;
+    this.width = width;
+    this.height = height;
+    Rays.push(this);
+  }
+  show() {
+    ctx.strokeStyle = "none";
+    if (showHitboxes === true) {
+      ctx.strokeStyle = "red";
+    }
+    ctx.beginPath();
+    ctx.rect(
+      this.pos.x - this.width / 2,
+      this.pos.y - this.height / 2,
+      this.width,
+      this.height
+    );
+    ctx.stroke();
+  }
+}
+
+class Line {
+  startPos = {
+    x: 0,
+    y: 0,
+  };
+  endPos = {
+    x: 0,
+    y: 0,
+  };
+  constructor(x, y, x2, y2) {
+    this.startPos.x = x;
+    this.startPos.y = y;
+    this.endPos.x = x2;
+    this.endPos.y = y2;
+    lines.push(this);
+  }
+  show() {
+    ctx.strokeStyle = "none";
+    if (showHitboxes === true) {
+      ctx.strokeStyle = "blue";
+    }
+    ctx.beginPath();
+    ctx.moveTo(this.startPos.x, this.startPos.y);
+    ctx.lineTo(this.endPos.x, this.endPos.y);
+    ctx.stroke();
+  }
+}
 
 class Character {
   pos = {
@@ -61,10 +120,6 @@ class Structure {
     objects.push(this);
   }
   show() {
-    ctx.strokeStyle = "none";
-    if (showHitboxes === true) {
-      ctx.strokeStyle = "red";
-    }
     ctx.beginPath();
     ctx.rect(
       this.pos.x - this.width / 2,
@@ -80,57 +135,112 @@ class Structure {
       this.width,
       this.height
     );
-    ctx.stroke();
   }
 }
 
-function rayCast(start, dir, other) {
-  class ray {
-    constructor(start, x, y) {
-      this.x1 = start.x;
-      this.y1 = start.y;
-      this.x2 = x1 + Math.cos(dir) * 1000000;
-      this.y2 = y1 + Math.sin(dir) * 1000000;
+function rayCast(start, dir) {
+  hitPos = {
+    x: 0,
+    y: 0,
+  };
+  hitObject = "";
+
+  hitDist = Infinity;
+  let Dist = Infinity;
+
+  for (let j = 0; j < objects.length; j++) {
+    if (objects[j] !== start) {
+      other = objects[j];
+      let otherVector1 = {
+        x: other.pos.x - other.width / 2,
+        y: other.pos.y + other.height / 2,
+      };
+      let otherVector2 = {
+        x: other.pos.x - other.width / 2,
+        y: other.pos.y - other.height / 2,
+      };
+      let otherVector3 = {
+        x: other.pos.x + other.width / 2,
+        y: other.pos.y - other.height / 2,
+      };
+      let otherVector4 = {
+        x: other.pos.x + other.width / 2,
+        y: other.pos.y + other.height / 2,
+      };
+
+      for (let i = 1; i < 5; i++) {
+        x1 = start.pos.x;
+        y1 = start.pos.y;
+        x2 = x1 + Math.cos(dir) * 1000000;
+        y2 = y1 + Math.sin(dir) * 1000000;
+
+        if (i === 4) {
+          x3 = eval(`otherVector${i}`).x;
+          y3 = eval(`otherVector${i}`).y;
+          x4 = eval(`otherVector${1}`).x;
+          y4 = eval(`otherVector${1}`).y;
+        } else {
+          x3 = eval(`otherVector${i}`).x;
+          y3 = eval(`otherVector${i}`).y;
+          x4 = eval(`otherVector${i + 1}`).x;
+          y4 = eval(`otherVector${i + 1}`).y;
+        }
+
+        var intT = Number;
+        var intU = Number;
+        var intPx = Number;
+        var intPy = Number;
+        var D = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+        if (D === 0) {
+          return;
+        }
+        intT = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / D;
+
+        intU = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / D;
+
+        if (0 < intT && intT < 1 && intU > 0 && intU < 1) {
+          intPy =
+            ((x1 * y2 - y1 * x2) * (y3 - y4) -
+              (y1 - y2) * (x3 * y4 - y3 * x4)) /
+            ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
+          intPx =
+            ((x1 * y2 - y1 * x2) * (x3 - x4) -
+              (x1 - x2) * (x3 * y4 - y3 * x4)) /
+            ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
+          if (dist({ x: intPx, y: intPy }, start.pos) < Dist) {
+            Dist = dist({ x: intPx, y: intPy }, start.pos);
+            hitPos.x = intPx;
+            hitPos.y = intPy;
+          }
+          if (dist(other.pos, start.pos) < hitDist) {
+            hitDist = dist(other.pos, start.pos);
+            hitObject = other;
+          }
+        }
+      }
     }
   }
-  ray = new ray(start, x, y);
-  x1 = ray.x1;
-  y1 = ray.y1;
-  x2 = ray.x2;
-  y2 = ray.y2;
-  x3 = other.x1;
-  y3 = other.y1;
-  x4 = other.x2;
-  y4 = other.y2;
 
-  var intPx = Number;
-  var intPy = Number;
-  intPy =
-    ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) /
-    ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
-  intPx =
-    ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) /
-    ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
-  console.log(intPx, intPy);
-  ctx.strokeStyle = "white";
-  ctx.lineWidth = 10;
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(intPx, intPy);
-  ctx.stroke();
-
-  ctx.strokeStyle = "white";
-  ctx.beginPath();
-  ctx.arc(intPx, intPy, 20, 0, Math.PI * 2, true);
-  ctx.fillStyle = "red";
-  ctx.fill();
-  ctx.stroke();
+  return [hitObject, hitPos];
 }
 
 let Player = new Character(500, 500, 30, 30);
-let Enemy = new Character(800, 300, 30, 30);
+// let Enemy = new Character(800, 300, 30, 30);
 let wall1 = new Structure(400, 400, 100, 20, textureCobble);
 let wall2 = new Structure(459, 360, 20, 100, textureCobble);
+
+function shoot(Object, Dir) {
+  if (Object.Ammo > 0) {
+    Object.Ammo -= 1;
+    console.log(Object.Ammo);
+    Rays = [];
+    hitObject = rayCast(Object, Dir);
+    hitObject[0].health -= 100;
+    hit = new rayHit(hitPos.x, hitPos.y, 5, 5);
+  } else {
+    console.log("Out of ammo");
+  }
+}
 
 function moveCharacter(Object, friction) {
   if (keys["w"]) {
@@ -208,24 +318,40 @@ canvas.addEventListener("mousemove", function (e) {
   mousePos.y = e.offsetY;
 });
 
+canvas.addEventListener("mousedown", function (e) {
+  mouseDown = true;
+  shoot(Player, Dir(Player.pos, mousePos));
+});
+canvas.addEventListener("mouseup", function (e) {
+  mouseDown = false;
+});
+
 function update() {
   requestAnimationFrame(update);
 
   moveCharacter(Player, 0.93);
   collisionDetection(Player);
-  // rayCast(Player, Dir(Player.pos, mousePos))
-
+  lineDir(Player.pos, Dir(Player.pos, mousePos));
   ctx.beginPath();
   ctx.rect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "white";
   ctx.fill();
   ctx.stroke();
   objects.forEach((Object) => {
-    Object.show();
+    if (Object.health > 0) {
+      Object.show();
+    } else {
+      objects.splice(objects.indexOf(Object), 1);
+    }
   });
-  lines.forEach((Object) => {
-    Object.show();
-  });
+  if (showHitboxes === true) {
+    lines.forEach((Object) => {
+      Object.show();
+    });
+    Rays.forEach((Object) => {
+      Object.show();
+    });
+  }
 }
 update();
 document.body.addEventListener("keydown", function (e) {
@@ -246,7 +372,7 @@ function lineDir(origin, dir) {
   lines = [];
   x = Math.cos(dir) * 1000000;
   y = Math.sin(dir) * 1000000;
-  ray = new rayLine(origin.x, origin.y, x + origin.x, origin.y + y);
+  ray = new Line(origin.x, origin.y, x + origin.x, origin.y + y);
 }
 
 function Dir(origin, other) {
