@@ -2,19 +2,24 @@ let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
 let textureCobble = new Image();
+textureCobble.src = "Textures/cobble.png";
 let textureWood = new Image();
 textureWood.src = "Textures/wood.png";
-textureCobble.src = "Textures/cobble.png";
+
+let textureGrass = new Image();
+textureGrass.src = "Textures/grass.png";
+
 let texturePlayer = new Image();
 texturePlayer.src = "Textures/Character.png";
 
 const centerX = canvas.width / 2,
   centerY = canvas.height / 2;
-
+let structures = [];
 let objects = [];
 let Rays = [];
 let lines = [];
 let keys = [];
+let shootableObjects = [];
 let showHitboxes = true;
 var mousePos = {
   x: 0,
@@ -172,6 +177,8 @@ class Structure {
     this.height = height;
     this.texture = texture;
     objects.push(this);
+    structures.push(this);
+    shootableObjects.push(this);
   }
   show() {
     ctx.beginPath();
@@ -181,14 +188,67 @@ class Structure {
       this.width,
       this.height
     );
-    var pattern = ctx.createPattern(this.texture, "repeat");
-    ctx.fillStyle = pattern;
-    ctx.fillRect(
-      this.pos.x - this.width / 2 - 0.5,
-      this.pos.y - this.height / 2 - 0.5,
-      this.width + 1,
-      this.height + 1
+    if (typeof this.texture === "string") {
+      ctx.fillStyle = this.texture;
+      ctx.fillRect(
+        this.pos.x - this.width / 2,
+        this.pos.y - this.height / 2,
+        this.width,
+        this.height
+      );
+    } else {
+      var pattern = ctx.createPattern(this.texture, "repeat");
+      ctx.fillStyle = pattern;
+      ctx.fillRect(
+        this.pos.x - this.width / 2,
+        this.pos.y - this.height / 2,
+        this.width,
+        this.height
+      );
+    }
+  }
+}
+
+class structureNoHB {
+  pos = {
+    x: 0,
+    y: 0,
+  };
+  health = 1000;
+  constructor(x, y, height, width, texture) {
+    this.pos.x = x;
+    this.pos.y = y;
+    this.width = width;
+    this.height = height;
+    this.texture = texture;
+    objects.push(this);
+  }
+  show() {
+    ctx.beginPath();
+    ctx.rect(
+      this.pos.x - this.width / 2,
+      this.pos.y - this.height / 2,
+      this.width,
+      this.height
     );
+    if (typeof this.texture === "string") {
+      ctx.fillStyle = this.texture;
+      ctx.fillRect(
+        this.pos.x - this.width / 2,
+        this.pos.y - this.height / 2,
+        this.width,
+        this.height
+      );
+    } else {
+      var pattern = ctx.createPattern(this.texture, "repeat");
+      ctx.fillStyle = pattern;
+      ctx.fillRect(
+        this.pos.x - this.width / 2,
+        this.pos.y - this.height / 2,
+        this.width,
+        this.height
+      );
+    }
   }
 }
 
@@ -202,9 +262,9 @@ function rayCast(start, dir) {
   hitDist = Infinity;
   let Dist = Infinity;
 
-  for (let j = 0; j < objects.length; j++) {
-    if (objects[j] !== start) {
-      other = objects[j];
+  for (let j = 0; j < shootableObjects.length; j++) {
+    if (shootableObjects[j] !== start) {
+      other = shootableObjects[j];
       let otherVector1 = {
         x: other.pos.x - other.width / 2,
         y: other.pos.y + other.height / 2,
@@ -287,13 +347,13 @@ let gameMap = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
@@ -324,12 +384,31 @@ function drawMap(gameMap) {
           canvas.height / gameMap[0].length,
           textureCobble
         );
+      } else if (gameMap[i][j] === 2) {
+        new structureNoHB(
+          (canvas.width / gameMap.length) * j +
+            canvas.width / gameMap.length / 2,
+          (canvas.height / gameMap[0].length) * i +
+            canvas.width / gameMap[0].length / 2,
+          canvas.width / gameMap.length,
+          canvas.height / gameMap[0].length,
+          textureWood
+        );
+      } else {
+        new structureNoHB(
+          (canvas.width / gameMap.length) * j +
+            canvas.width / gameMap.length / 2,
+          (canvas.height / gameMap[0].length) * i +
+            canvas.width / gameMap[0].length / 2,
+          canvas.width / gameMap.length,
+          canvas.height / gameMap[0].length,
+          textureGrass
+        );
       }
     }
   }
 }
 drawMap(gameMap);
-
 let Player = new Character(500, 500, 30, 30);
 // let Enemy = new Character(800, 300, 30, 30);
 // let wall1 = new Structure(400, 400, 100, 20, textureCobble);
@@ -394,10 +473,10 @@ function moveCharacter(Object, friction) {
 }
 
 function collisionDetection(thisObject, positionX, positionY) {
-  for (let i = 0; i < objects.length; i++) {
+  for (let i = 0; i < structures.length; i++) {
     let xCollision = false;
     let yCollision = false;
-    const Object = objects[i];
+    const Object = structures[i];
     if (thisObject !== Object) {
       if (
         positionX < Object.pos.x + Object.width / 2 + thisObject.width / 2 &&
