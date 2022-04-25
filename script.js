@@ -21,6 +21,7 @@ let lines = [];
 let keys = [];
 let shootableObjects = [];
 let showHitboxes = true;
+let bullets = []
 var mousePos = {
   x: 0,
   y: 0,
@@ -89,7 +90,7 @@ class Character {
     x: 0,
     y: 0,
   };
-  speed = 1;
+  speed = 2;
   velocity = {
     x: 0,
     y: 0,
@@ -131,45 +132,47 @@ class Character {
   }
 }
 
-// class Character {
-//   pos = {
-//     x: 0,
-//     y: 0,
-//   };
-//   speed = 3;
-//   velocity = {
-//     x: 0,
-//     y: 0,
-//   };
-//   health = 1000;
-//   Ammo = 20;
-//   constructor(x, y, height, width) {
-//     this.pos.x = x;
-//     this.pos.y = y;
-//     this.width = width;
-//     this.height = height;
+class Bullet {
+  pos = {
+    x: 0,
+    y: 0,
+  };
+  endDist = 0
+  direction = 0
+  startPos = 0
+  constructor(startPos, endPos, direction) {
+    this.startPos = startPos
+    this.endDist = dist(startPos, endPos)
+    this.pos.x = startPos.x + Math.cos(direction) * 20
+    this.pos.y = startPos.y + Math.sin(direction) * 20
+    this.direction = direction
+    bullets.push(this)
+  }
+  show() {
+    if(dist(this.startPos, this.pos) > this.endDist) {
+      bullets.splice(bullets.indexOf(this), 1)
+    } else{
+    
+    ctx.lineWidth = 2
+    ctx.strokeStyle = "red"
+    ctx.beginPath();
+    ctx.moveTo(this.pos.x , this.pos.y);
+    ctx.lineTo(this.pos.x += Math.cos(this.direction) * 7, this.pos.y += Math.sin(this.direction) *  7);
+    ctx.stroke()
+    this.pos.x += Math.cos(this.direction) * 50
+    this.pos.y += Math.sin(this.direction) * 50
 
-//     objects.push(this);
-//   }
-//   show() {
-//     ctx.beginPath();
-//     ctx.strokeStyle = "black";
-//     ctx.rect(
-//       this.pos.x - this.width / 2,
-//       this.pos.y - this.height / 2,
-//       this.width,
-//       this.height
-//     );
-//     ctx.stroke();
-//   }
-// }
+    }
+  }
+
+}
 
 class Structure {
   pos = {
     x: 0,
     y: 0,
   };
-  health = 1000;
+  health = 100;
   constructor(x, y, height, width, texture) {
     this.pos.x = x;
     this.pos.y = y;
@@ -205,8 +208,8 @@ class Structure {
         this.width,
         this.height
       );
-    }
-  }
+    }}
+  
 }
 
 class structureNoHB {
@@ -394,17 +397,19 @@ function drawMap(gameMap) {
           canvas.height / gameMap[0].length,
           textureWood
         );
-      } else {
-        new structureNoHB(
-          (canvas.width / gameMap.length) * j +
-            canvas.width / gameMap.length / 2,
-          (canvas.height / gameMap[0].length) * i +
-            canvas.width / gameMap[0].length / 2,
-          canvas.width / gameMap.length,
-          canvas.height / gameMap[0].length,
-          textureGrass
-        );
-      }
+      } 
+    //   else {
+    //     new structureNoHB(
+    //       (canvas.width / gameMap.length) * j +
+    //         canvas.width / gameMap.length / 2,
+    //       (canvas.height / gameMap[0].length) * i +
+    //         canvas.width / gameMap[0].length / 2,
+    //       canvas.width / gameMap.length,
+    //       canvas.height / gameMap[0].length,
+    //       textureGrass
+    //     );
+    //   }
+    // }
     }
   }
 }
@@ -420,6 +425,9 @@ function shoot(Object, Dir) {
     console.log(Object.Ammo);
     Rays = [];
     hitObject = rayCast(Object, Dir);
+    if(hitObject[0] !== undefined) {
+      new Bullet(Player.pos, hitPos, Dir)
+    }
 
     hitObject[0].health -= 100;
     console.log(hitObject[0].health);
@@ -516,7 +524,7 @@ canvas.addEventListener("mouseup", function (e) {
 function update() {
   requestAnimationFrame(update);
 
-  moveCharacter(Player, 0.93);
+  moveCharacter(Player, 0.90);
   collisionDetection(Player);
   lineDir(Player.pos, Dir(Player.pos, mousePos));
   ctx.beginPath();
@@ -529,7 +537,13 @@ function update() {
       Object.show();
     } else {
       objects.splice(objects.indexOf(Object), 1);
+      shootableObjects.splice(shootableObjects.indexOf(Object), 1);
+      structures.splice(structures.indexOf(Object), 1);
+
     }
+  });
+  bullets.forEach((Object) => {
+    Object.show();
   });
   if (showHitboxes === true) {
     lines.forEach((Object) => {
