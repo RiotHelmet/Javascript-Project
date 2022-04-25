@@ -1,6 +1,9 @@
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
+texturePlayer = new Image();
+texturePlayer.src = "Textures/Character.png";
+
 let textureCobble = new Image();
 textureCobble.src = "Textures/cobble.png";
 let textureWood = new Image();
@@ -9,19 +12,22 @@ textureWood.src = "Textures/wood.png";
 let textureGrass = new Image();
 textureGrass.src = "Textures/grass.png";
 
-let texturePlayer = new Image();
-texturePlayer.src = "Textures/Character.png";
+textureMap = new Image();
+textureMap.src = "Textures/Map.png";
 
 const centerX = canvas.width / 2,
   centerY = canvas.height / 2;
+
+let moveMap = false;
 let structures = [];
-let objects = [];
+let shootableObjects = [];
+let characters = [];
 let Rays = [];
 let lines = [];
+let objects = [];
 let keys = [];
-let shootableObjects = [];
 let showHitboxes = true;
-let bullets = []
+let bullets = [];
 var mousePos = {
   x: 0,
   y: 0,
@@ -85,12 +91,72 @@ class Line {
   }
 }
 
+class map {
+  pos = {
+    x: 0,
+    y: 0,
+  };
+  speed = 1;
+  velocity = {
+    x: 0,
+    y: 0,
+  };
+  constructor() {
+    this.pos.x = Player.pos.x;
+    this.pos.y = Player.pos.y;
+    this.width = canvas.width;
+    this.height = canvas.height;
+
+    map.objects = objects;
+  }
+  show() {
+    let translateAmountX = this.pos.x - canvas.width / 2;
+    let translateAmountY = this.pos.y - canvas.height / 2;
+    ctx.save();
+    ctx.translate(-translateAmountX, -translateAmountY);
+
+    ctx.drawImage(textureMap, 0, 0, 2 * this.width, this.height);
+    objects.forEach((Object) => {
+      if (Object.health > 0) {
+        Object.show();
+      } else {
+        objects.splice(objects.indexOf(Object), 1);
+        shootableObjects.splice(shootableObjects.indexOf(Object), 1);
+        structures.splice(structures.indexOf(Object), 1);
+      }
+    });
+    bullets.forEach((Object) => {
+      Object.show();
+    });
+    if (showHitboxes === true) {
+      lines.forEach((Object) => {
+        Object.show();
+      });
+      Rays.forEach((Object) => {
+        Object.show();
+      });
+    }
+    characters.forEach((Object) => {
+      Object.show(
+        Dir(
+          {
+            x: Player.pos.x - translateAmountX,
+            y: Player.pos.y - translateAmountY,
+          },
+          mousePos
+        )
+      );
+    });
+    ctx.restore();
+  }
+}
+
 class Character {
   pos = {
     x: 0,
     y: 0,
   };
-  speed = 2;
+  speed = 1;
   velocity = {
     x: 0,
     y: 0,
@@ -103,9 +169,9 @@ class Character {
     this.width = width;
     this.height = height;
 
-    objects.push(this);
+    characters.push(this);
   }
-  show() {
+  show(direction) {
     if (showHitboxes === true) {
       ctx.beginPath();
       ctx.strokeStyle = "black";
@@ -120,7 +186,7 @@ class Character {
 
     ctx.save();
     ctx.translate(this.pos.x, this.pos.y);
-    ctx.rotate(Dir(this.pos, mousePos) + Math.PI / 2 + 0.2);
+    ctx.rotate(direction + Math.PI / 2 + 0.2);
     ctx.drawImage(
       texturePlayer,
       -this.width / 2,
@@ -137,34 +203,34 @@ class Bullet {
     x: 0,
     y: 0,
   };
-  endDist = 0
-  direction = 0
-  startPos = 0
+  endDist = 0;
+  direction = 0;
+  startPos = 0;
   constructor(startPos, endPos, direction) {
-    this.startPos = startPos
-    this.endDist = dist(startPos, endPos)
-    this.pos.x = startPos.x + Math.cos(direction) * 20
-    this.pos.y = startPos.y + Math.sin(direction) * 20
-    this.direction = direction
-    bullets.push(this)
+    this.startPos = startPos;
+    this.endDist = dist(startPos, endPos);
+    this.pos.x = startPos.x + Math.cos(direction) * 20;
+    this.pos.y = startPos.y + Math.sin(direction) * 20;
+    this.direction = direction;
+    bullets.push(this);
   }
   show() {
-    if(dist(this.startPos, this.pos) > this.endDist) {
-      bullets.splice(bullets.indexOf(this), 1)
-    } else{
-    
-    ctx.lineWidth = 2
-    ctx.strokeStyle = "red"
-    ctx.beginPath();
-    ctx.moveTo(this.pos.x , this.pos.y);
-    ctx.lineTo(this.pos.x += Math.cos(this.direction) * 7, this.pos.y += Math.sin(this.direction) *  7);
-    ctx.stroke()
-    this.pos.x += Math.cos(this.direction) * 50
-    this.pos.y += Math.sin(this.direction) * 50
-
+    if (dist(this.startPos, this.pos) > this.endDist) {
+      bullets.splice(bullets.indexOf(this), 1);
+    } else {
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "red";
+      ctx.beginPath();
+      ctx.moveTo(this.pos.x, this.pos.y);
+      ctx.lineTo(
+        (this.pos.x += Math.cos(this.direction) * 7),
+        (this.pos.y += Math.sin(this.direction) * 7)
+      );
+      ctx.stroke();
+      this.pos.x += Math.cos(this.direction) * 50;
+      this.pos.y += Math.sin(this.direction) * 50;
     }
   }
-
 }
 
 class Structure {
@@ -208,8 +274,8 @@ class Structure {
         this.width,
         this.height
       );
-    }}
-  
+    }
+  }
 }
 
 class structureNoHB {
@@ -397,27 +463,23 @@ function drawMap(gameMap) {
           canvas.height / gameMap[0].length,
           textureWood
         );
-      } 
-    //   else {
-    //     new structureNoHB(
-    //       (canvas.width / gameMap.length) * j +
-    //         canvas.width / gameMap.length / 2,
-    //       (canvas.height / gameMap[0].length) * i +
-    //         canvas.width / gameMap[0].length / 2,
-    //       canvas.width / gameMap.length,
-    //       canvas.height / gameMap[0].length,
-    //       textureGrass
-    //     );
-    //   }
-    // }
+      }
+      //   else {
+      //     new structureNoHB(
+      //       (canvas.width / gameMap.length) * j +
+      //         canvas.width / gameMap.length / 2,
+      //       (canvas.height / gameMap[0].length) * i +
+      //         canvas.width / gameMap[0].length / 2,
+      //       canvas.width / gameMap.length,
+      //       canvas.height / gameMap[0].length,
+      //       textureGrass
+      //     );
+      //   }
+      // }
     }
   }
 }
 drawMap(gameMap);
-let Player = new Character(500, 500, 30, 30);
-// let Enemy = new Character(800, 300, 30, 30);
-// let wall1 = new Structure(400, 400, 100, 20, textureCobble);
-// let wall2 = new Structure(459, 360, 20, 100, textureCobble);
 
 function shoot(Object, Dir) {
   if (Object.Ammo > 0) {
@@ -425,8 +487,8 @@ function shoot(Object, Dir) {
     console.log(Object.Ammo);
     Rays = [];
     hitObject = rayCast(Object, Dir);
-    if(hitObject[0] !== undefined) {
-      new Bullet(Player.pos, hitPos, Dir)
+    if (hitObject[0] !== undefined) {
+      new Bullet(Player.pos, hitPos, Dir);
     }
 
     hitObject[0].health -= 100;
@@ -434,6 +496,52 @@ function shoot(Object, Dir) {
     hit = new rayHit(hitPos.x, hitPos.y, 5, 5);
   } else {
     console.log("Out of ammo");
+  }
+}
+
+let Player = new Character(centerX, centerY, 40, 40);
+let Map = new map();
+// let Enemy = new Character(800, 300, 30, 30);
+// let wall1 = new Structure(400, 400, 100, 20, textureCobble);
+// let wall2 = new Structure(459, 360, 20, 100, textureCobble);
+
+function collisionDetection(thisObject, positionX, positionY) {
+  for (let i = 0; i < structures.length; i++) {
+    let xCollision = false;
+    let yCollision = false;
+    const Object = structures[i];
+    if (thisObject !== Object) {
+      if (
+        positionX < Object.pos.x + Object.width / 2 + thisObject.width / 2 &&
+        positionX > Object.pos.x - Object.width / 2 - thisObject.width / 2
+      ) {
+        // console.log("Collision X")
+        xCollision = true;
+      }
+      if (
+        positionY < Object.pos.y + Object.height / 2 + thisObject.height / 2 &&
+        positionY > Object.pos.y - Object.height / 2 - thisObject.height / 2
+      ) {
+        // console.log("Collision Y")
+        yCollision = true;
+      }
+      if (xCollision === true && yCollision === true) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function moveCamera() {
+  let distance = dist(Map.pos, Player.pos);
+  let direction = Dir(Map.pos, Player.pos);
+  let start = Map.pos;
+  let destination = Player.pos;
+  let stepSize = distance / 75;
+  if (distance > 0) {
+    Map.pos.x += Math.cos(direction) * stepSize;
+    Map.pos.y += Math.sin(direction) * stepSize;
   }
 }
 
@@ -480,34 +588,6 @@ function moveCharacter(Object, friction) {
   Object.velocity.y *= friction;
 }
 
-function collisionDetection(thisObject, positionX, positionY) {
-  for (let i = 0; i < structures.length; i++) {
-    let xCollision = false;
-    let yCollision = false;
-    const Object = structures[i];
-    if (thisObject !== Object) {
-      if (
-        positionX < Object.pos.x + Object.width / 2 + thisObject.width / 2 &&
-        positionX > Object.pos.x - Object.width / 2 - thisObject.width / 2
-      ) {
-        // console.log("Collision X")
-        xCollision = true;
-      }
-      if (
-        positionY < Object.pos.y + Object.height / 2 + thisObject.height / 2 &&
-        positionY > Object.pos.y - Object.height / 2 - thisObject.height / 2
-      ) {
-        // console.log("Collision Y")
-        yCollision = true;
-      }
-      if (xCollision === true && yCollision === true) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 canvas.addEventListener("mousemove", function (e) {
   mousePos.x = e.offsetX;
   mousePos.y = e.offsetY;
@@ -524,35 +604,14 @@ canvas.addEventListener("mouseup", function (e) {
 function update() {
   requestAnimationFrame(update);
 
-  moveCharacter(Player, 0.90);
-  collisionDetection(Player);
-  lineDir(Player.pos, Dir(Player.pos, mousePos));
+  moveCharacter(Player, 0.93);
+  moveCamera();
   ctx.beginPath();
   ctx.rect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "white";
   ctx.fill();
   ctx.stroke();
-  objects.forEach((Object) => {
-    if (Object.health > 0) {
-      Object.show();
-    } else {
-      objects.splice(objects.indexOf(Object), 1);
-      shootableObjects.splice(shootableObjects.indexOf(Object), 1);
-      structures.splice(structures.indexOf(Object), 1);
-
-    }
-  });
-  bullets.forEach((Object) => {
-    Object.show();
-  });
-  if (showHitboxes === true) {
-    lines.forEach((Object) => {
-      Object.show();
-    });
-    Rays.forEach((Object) => {
-      Object.show();
-    });
-  }
+  Map.show();
 }
 update();
 document.body.addEventListener("keydown", function (e) {
@@ -585,12 +644,6 @@ function Dir(origin, other) {
     return 2 * Math.PI - Math.acos((x - origin.x) / dist(origin, other));
   }
 }
-
-// function moveObject(Object, angle) {
-//     angle = degrees_to_radians(angle)
-//     Object.pos.x += Math.cos(angle) * Object.speed;
-//     Object.pos.y += Math.sin(angle) * Object.speed;
-// }
 
 function dist(a, b) {
   x1 = a.x;
