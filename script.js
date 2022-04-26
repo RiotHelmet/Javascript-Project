@@ -15,6 +15,9 @@ textureGrass.src = "Textures/grass.png";
 textureMap = new Image();
 textureMap.src = "Textures/Map.png";
 
+let translateAmountX
+let translateAmountY
+
 const centerX = canvas.width / 2,
   centerY = canvas.height / 2;
 
@@ -29,6 +32,11 @@ let keys = [];
 let showHitboxes = true;
 let bullets = [];
 var mousePos = {
+  x: 0,
+  y: 0,
+};
+
+var mouse = {
   x: 0,
   y: 0,
 };
@@ -110,12 +118,16 @@ class map {
     map.objects = objects;
   }
   show() {
-    let translateAmountX = this.pos.x - canvas.width / 2;
-    let translateAmountY = this.pos.y - canvas.height / 2;
+
+    translateAmountX = this.pos.x - canvas.width / 2;
+    translateAmountY = this.pos.y - canvas.height / 2;
+
+
+
     ctx.save();
     ctx.translate(-translateAmountX, -translateAmountY);
 
-    ctx.drawImage(textureMap, 0, 0, 2 * this.width, this.height);
+    ctx.drawImage(textureGrass, 0, 0, 2 * this.width, this.height);
     objects.forEach((Object) => {
       if (Object.health > 0) {
         Object.show();
@@ -140,8 +152,8 @@ class map {
       Object.show(
         Dir(
           {
-            x: Player.pos.x - translateAmountX,
-            y: Player.pos.y - translateAmountY,
+            x: Player.pos.x,
+            y: Player.pos.y,
           },
           mousePos
         )
@@ -156,22 +168,40 @@ class Character {
     x: 0,
     y: 0,
   };
-  speed = 1;
+  speed = 2;
   velocity = {
     x: 0,
     y: 0,
   };
   health = 1000;
-  Ammo = 20;
+  Ammo = 2000;
   constructor(x, y, height, width) {
     this.pos.x = x;
     this.pos.y = y;
     this.width = width;
     this.height = height;
+    // character
+    this.torsoWidth = this.width
+    this.torsoHeight = this.height / 4
+    this.headSize = this.width / 2
+    this.movementDegree = 0
+    this.leftLeg = {
+      size : this.width / 4,
+      x: -10,
+      movementDegree : 10,
+      y: +10,
+    }
+    this.rightLeg = {
+      size : this.width / 4,
+      x: +10,
+      y: -10 - 20*Math.sin(this.movementDegree),
+    }
 
     characters.push(this);
   }
   show(direction) {
+    this.leftLeg.y =  10*Math.sin(this.movementDegree)
+    this.rightLeg.y = - 10*Math.sin(this.movementDegree)
     if (showHitboxes === true) {
       ctx.beginPath();
       ctx.strokeStyle = "black";
@@ -183,10 +213,9 @@ class Character {
       );
       ctx.stroke();
     }
-
     ctx.save();
     ctx.translate(this.pos.x, this.pos.y);
-    ctx.rotate(direction + Math.PI / 2 + 0.2);
+    ctx.rotate(direction + Math.PI / 2);
     ctx.drawImage(
       texturePlayer,
       -this.width / 2,
@@ -194,6 +223,43 @@ class Character {
       this.width,
       this.height
     );
+
+        // left leg
+        ctx.fillStyle = "blue"
+        ctx.fillRect(
+          (-this.leftLeg.size/2) + this.leftLeg.x,
+          (-this.leftLeg.size/2) + this.leftLeg.y,
+          this.leftLeg.size,
+          this.leftLeg.size
+        );  
+        // right leg
+        ctx.fillStyle = "blue"
+        ctx.fillRect(
+          (-this.rightLeg.size/2) + this.rightLeg.x,
+          (-this.rightLeg.size/2) + this.rightLeg.y,
+          this.rightLeg.size,
+          this.rightLeg.size
+        );  
+
+    //torso
+
+    ctx.fillStyle = "red"
+    ctx.fillRect(
+      -this.torsoWidth/2,
+      -this.torsoHeight/2,
+      this.torsoWidth,
+      this.torsoHeight
+    );  
+    // head
+    ctx.fillStyle = "black"
+    ctx.fillRect(
+      -this.headSize/2,
+      -this.headSize/2,
+      this.headSize,
+      this.headSize
+    );  
+
+    ctx.translate(-this.pos.x, -this.pos.y);
     ctx.restore();
   }
 }
@@ -220,6 +286,9 @@ class Bullet {
     } else {
       ctx.lineWidth = 2;
       ctx.strokeStyle = "red";
+      
+     
+
       ctx.beginPath();
       ctx.moveTo(this.pos.x, this.pos.y);
       ctx.lineTo(
@@ -536,9 +605,8 @@ function collisionDetection(thisObject, positionX, positionY) {
 function moveCamera() {
   let distance = dist(Map.pos, Player.pos);
   let direction = Dir(Map.pos, Player.pos);
-  let start = Map.pos;
-  let destination = Player.pos;
-  let stepSize = distance / 75;
+  let cameraSpeed = 25
+  let stepSize = distance / cameraSpeed;
   if (distance > 0) {
     Map.pos.x += Math.cos(direction) * stepSize;
     Map.pos.y += Math.sin(direction) * stepSize;
@@ -546,26 +614,33 @@ function moveCamera() {
 }
 
 function moveCharacter(Object, friction) {
+  
   if (keys["w"]) {
     if (Object.velocity.y > -Object.speed) {
       Object.velocity.y--;
+      Object.movementDegree += (0.5)
+
     }
   }
   if (keys["a"]) {
     if (Object.velocity.x > -Object.speed) {
       Object.velocity.x--;
+      Object.movementDegree += (0.5)
     }
   }
   if (keys["s"]) {
     if (Object.velocity.y < Object.speed) {
       Object.velocity.y++;
+      Object.movementDegree += (0.5)
     }
   }
   if (keys["d"]) {
     if (Object.velocity.x < Object.speed) {
       Object.velocity.x++;
+      Object.movementDegree += (0.5)
     }
   }
+
   if (
     collisionDetection(
       Player,
@@ -586,11 +661,12 @@ function moveCharacter(Object, friction) {
   }
   Object.velocity.x *= friction;
   Object.velocity.y *= friction;
+
 }
 
 canvas.addEventListener("mousemove", function (e) {
-  mousePos.x = e.offsetX;
-  mousePos.y = e.offsetY;
+  mouse.x = e.offsetX;
+  mouse.y = e.offsetY;
 });
 
 canvas.addEventListener("mousedown", function (e) {
@@ -603,6 +679,11 @@ canvas.addEventListener("mouseup", function (e) {
 
 function update() {
   requestAnimationFrame(update);
+
+  mousePos = {
+    x : mouse.x + translateAmountX,
+    y : mouse.y + translateAmountY
+  }
 
   moveCharacter(Player, 0.93);
   moveCamera();
