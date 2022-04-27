@@ -165,7 +165,7 @@ class Character {
     x: 0,
     y: 0,
   };
-  speed = 2;
+  speed = 3;
   velocity = {
     x: 0,
     y: 0,
@@ -177,11 +177,14 @@ class Character {
     this.pos.y = y;
     this.width = width;
     this.height = height;
+    this.size = 50;
     // character
     this.torsoWidth = this.width;
     this.torsoHeight = this.height / 4;
     this.headSize = this.width / 2;
+    this.headX = 0;
     this.movementDegree = 0;
+    this.rotation = 0;
     this.weapon = {
       height: 30,
       width: 5,
@@ -189,35 +192,36 @@ class Character {
       y: -20,
     };
     this.leftLeg = {
-      size: this.width / 4,
       x: -10,
-      y: +10,
+      y: 0,
     };
     this.rightLeg = {
-      size: this.width / 4,
       x: +10,
-      y: -10,
+      y: 0,
     };
     this.leftArm = {
-      height: this.height / 1.5,
-      width: this.width / 4,
-      x: -12,
-      y: 0,
+      x: -20,
+      y: -5,
       rotation: degrees_to_radians(0),
     };
     this.rightArm = {
-      height: this.height / 3,
-      width: this.width / 4,
       x: 20,
-      y: 0,
+      y: -5,
       rotation: degrees_to_radians(0),
     };
 
     characters.push(this);
   }
   show(direction) {
-    this.leftLeg.y = 20 * Math.sin(this.movementDegree);
-    this.rightLeg.y = -20 * Math.sin(this.movementDegree);
+    let spriteWidth = 1200 / 8;
+    let spriteHeight = 1015 / 7;
+    this.leftLeg.y = 10 * Math.sin(this.movementDegree);
+    this.rightLeg.y = -10 * Math.sin(this.movementDegree);
+    this.rightArm.y = -5 + -4 * Math.sin(this.movementDegree);
+    this.leftArm.y = -5 + 4 * Math.sin(this.movementDegree);
+    this.headX = 2 * Math.sin(this.movementDegree);
+
+    this.rotation = (Math.PI / 16) * Math.sin(this.movementDegree);
     if (showHitboxes === true) {
       ctx.beginPath();
       ctx.strokeStyle = "black";
@@ -231,76 +235,65 @@ class Character {
     }
     ctx.save();
     ctx.translate(this.pos.x, this.pos.y);
-    ctx.rotate(direction + Math.PI / 2);
 
     // left leg
-    ctx.fillStyle = "blue";
-    ctx.fillRect(
-      -this.leftLeg.size / 2 + this.leftLeg.x,
-      -this.leftLeg.size / 2 + this.leftLeg.y,
-      this.leftLeg.size,
-      this.leftLeg.size
-    );
-    // right leg
-    ctx.fillStyle = "blue";
-    ctx.fillRect(
-      -this.rightLeg.size / 2 + this.rightLeg.x,
-      -this.rightLeg.size / 2 + this.rightLeg.y,
-      this.rightLeg.size,
-      this.rightLeg.size
-    );
-
-    // Right Arm
-    ctx.save();
-    ctx.beginPath();
-    ctx.rotate(this.leftArm.rotation);
-    ctx.rect(
-      -this.leftArm.width / 2 + 10,
-      -this.leftArm.height / 2 - 20,
-      this.leftArm.width + 30,
-      this.leftArm.height + 30
-    );
-    ctx.clip();
     ctx.drawImage(
       texturePlayer,
-      25,
-      25,
-      100,
-      100,
-      -this.leftArm.width / 2 - 28,
-      -this.leftArm.height / 2 - 10,
-      this.leftArm.width + 150,
-      this.leftArm.height + 150
+      4 * spriteWidth,
+      0 * spriteHeight,
+      spriteWidth,
+      spriteHeight,
+      -this.size / 2 + this.leftLeg.x,
+      -this.size / 2 + this.leftLeg.y,
+      this.size,
+      this.size
     );
-    ctx.closePath();
+
+    // right leg
+    ctx.drawImage(
+      texturePlayer,
+      4 * spriteWidth,
+      0 * spriteHeight,
+      spriteWidth,
+      spriteHeight,
+      -this.size / 2 + this.rightLeg.x,
+      -this.size / 2 + this.rightLeg.y,
+      this.size,
+      this.size
+    );
+    ctx.rotate(direction + Math.PI / 2 + this.rotation);
+    // Right Arm
+    ctx.save();
+    ctx.rotate(this.leftArm.rotation);
+    ctx.drawImage(
+      texturePlayer,
+      2 * spriteWidth,
+      0 * spriteHeight,
+      spriteWidth,
+      spriteHeight,
+      -this.size / 2 + this.rightArm.x,
+      -this.size / 2 + this.rightArm.y,
+      this.size,
+      this.size
+    );
+
     ctx.restore();
 
     // Left Arm
 
     ctx.save();
-    ctx.beginPath();
     ctx.rotate(this.leftArm.rotation);
-    ctx.rect(
-      -this.leftArm.width / 2 - 35,
-      -this.leftArm.height / 2 - 20,
-      this.leftArm.width + 30,
-      this.leftArm.height + 30
-    );
-
-    ctx.clip();
-    ctx.closePath();
     ctx.drawImage(
       texturePlayer,
-      25,
-      25,
-      100,
-      100,
-      -this.leftArm.width / 2 - 33,
-      -this.leftArm.height / 2 - 10,
-      this.leftArm.width + 150,
-      this.leftArm.height + 150
+      3 * spriteWidth,
+      0 * spriteHeight,
+      spriteWidth,
+      spriteHeight,
+      -this.size / 2 + this.leftArm.x,
+      -this.size / 2 + this.leftArm.y,
+      this.size,
+      this.size
     );
-
     ctx.restore();
 
     //weapon
@@ -309,27 +302,30 @@ class Character {
 
     ctx.drawImage(
       texturePlayer,
-      68,
-      -74,
-      100,
-      100,
-      -this.headSize / 2 - 17,
-      -this.headSize / 2 - 140,
-      this.headSize + 150,
-      this.headSize + 150
+      1 * spriteWidth,
+      0 * spriteHeight,
+      spriteWidth,
+      spriteHeight,
+      -(this.size - 5) / 2,
+      -(this.size - 5) / 2,
+      this.size - 5,
+      this.size - 5
     );
+
     // head
+    ctx.save();
     ctx.drawImage(
       texturePlayer,
-      75,
-      25,
-      100,
-      100,
-      -this.headSize / 2 - 7,
-      -this.headSize / 2 - 15,
-      this.headSize + 160,
-      this.headSize + 160
+      0 * spriteWidth,
+      0 * spriteHeight,
+      spriteWidth,
+      spriteHeight,
+      -this.size / 2 + this.headX,
+      -this.size / 2,
+      this.size,
+      this.size
     );
+    ctx.restore();
 
     ctx.translate(-this.pos.x, -this.pos.y);
     ctx.restore();
@@ -378,58 +374,18 @@ class Structure {
     y: 0,
   };
   health = 100;
-  constructor(x, y, height, width, texture) {
+  constructor(x, y, height, width, texture, hitbox) {
     this.pos.x = x;
     this.pos.y = y;
     this.width = width;
     this.height = height;
     this.texture = texture;
+    this.hitBox = hitbox;
     objects.push(this);
     structures.push(this);
-    shootableObjects.push(this);
-  }
-  show() {
-    ctx.beginPath();
-    ctx.rect(
-      this.pos.x - this.width / 2,
-      this.pos.y - this.height / 2,
-      this.width,
-      this.height
-    );
-    if (typeof this.texture === "string") {
-      ctx.fillStyle = this.texture;
-      ctx.fillRect(
-        this.pos.x - this.width / 2,
-        this.pos.y - this.height / 2,
-        this.width,
-        this.height
-      );
-    } else {
-      var pattern = ctx.createPattern(this.texture, "repeat");
-      ctx.fillStyle = pattern;
-      ctx.fillRect(
-        this.pos.x - this.width / 2,
-        this.pos.y - this.height / 2,
-        this.width,
-        this.height
-      );
+    if (hitbox === true) {
+      shootableObjects.push(this);
     }
-  }
-}
-
-class structureNoHB {
-  pos = {
-    x: 0,
-    y: 0,
-  };
-  health = 1000;
-  constructor(x, y, height, width, texture) {
-    this.pos.x = x;
-    this.pos.y = y;
-    this.width = width;
-    this.height = height;
-    this.texture = texture;
-    objects.push(this);
   }
   show() {
     ctx.beginPath();
@@ -590,31 +546,21 @@ function drawMap(gameMap) {
             canvas.width / gameMap[0].length / 2,
           canvas.width / gameMap.length,
           canvas.height / gameMap[0].length,
-          textureCobble
+          textureCobble,
+          true
         );
       } else if (gameMap[i][j] === 2) {
-        new structureNoHB(
+        new Structure(
           (canvas.width / gameMap.length) * j +
             canvas.width / gameMap.length / 2,
           (canvas.height / gameMap[0].length) * i +
             canvas.width / gameMap[0].length / 2,
           canvas.width / gameMap.length,
           canvas.height / gameMap[0].length,
-          textureWood
+          textureWood,
+          false
         );
       }
-      //   else {
-      //     new structureNoHB(
-      //       (canvas.width / gameMap.length) * j +
-      //         canvas.width / gameMap.length / 2,
-      //       (canvas.height / gameMap[0].length) * i +
-      //         canvas.width / gameMap[0].length / 2,
-      //       canvas.width / gameMap.length,
-      //       canvas.height / gameMap[0].length,
-      //       textureGrass
-      //     );
-      //   }
-      // }
     }
   }
 }
@@ -650,22 +596,25 @@ function collisionDetection(thisObject, positionX, positionY) {
     let yCollision = false;
     const Object = structures[i];
     if (thisObject !== Object) {
-      if (
-        positionX < Object.pos.x + Object.width / 2 + thisObject.width / 2 &&
-        positionX > Object.pos.x - Object.width / 2 - thisObject.width / 2
-      ) {
-        // console.log("Collision X")
-        xCollision = true;
-      }
-      if (
-        positionY < Object.pos.y + Object.height / 2 + thisObject.height / 2 &&
-        positionY > Object.pos.y - Object.height / 2 - thisObject.height / 2
-      ) {
-        // console.log("Collision Y")
-        yCollision = true;
-      }
-      if (xCollision === true && yCollision === true) {
-        return true;
+      if (Object.hitBox === true) {
+        if (
+          positionX < Object.pos.x + Object.width / 2 + thisObject.width / 2 &&
+          positionX > Object.pos.x - Object.width / 2 - thisObject.width / 2
+        ) {
+          // console.log("Collision X")
+          xCollision = true;
+        }
+        if (
+          positionY <
+            Object.pos.y + Object.height / 2 + thisObject.height / 2 &&
+          positionY > Object.pos.y - Object.height / 2 - thisObject.height / 2
+        ) {
+          // console.log("Collision Y")
+          yCollision = true;
+        }
+        if (xCollision === true && yCollision === true) {
+          return true;
+        }
       }
     }
   }
@@ -711,9 +660,8 @@ function moveCharacter(Object, friction) {
   }
 
   if (walking === true) {
-    Object.movementDegree += 0.5;
+    Player.movementDegree += 1;
   }
-
   if (
     collisionDetection(
       Player,
