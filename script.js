@@ -22,6 +22,7 @@ const centerX = canvas.width / 2,
   centerY = canvas.height / 2;
 
 let moveMap = false;
+let items = [];
 let structures = [];
 let shootableObjects = [];
 let characters = [];
@@ -125,6 +126,24 @@ class map {
     ctx.translate(-translateAmountX, -translateAmountY);
 
     ctx.drawImage(textureGrass, 0, 0, 2 * this.width, this.height);
+    if (Player.Weapon !== false) {
+      if (keys["f"]) {
+        throwWeapon(Player.Weapon);
+      }
+    }
+    items.forEach((Object) => {
+      if (dist(Player.pos, Object.pos) < 50) {
+        if (Player.Weapon === false) {
+          if (keys["e"]) {
+            Object.onGround = false;
+            Player.Weapon = Object;
+            items.splice(items.indexOf(items), 1);
+            console.log("yo");
+          }
+        }
+      }
+      Object.show();
+    });
     objects.forEach((Object) => {
       if (Object.health > 0) {
         Object.show();
@@ -185,6 +204,7 @@ class Character {
     this.headX = 0;
     this.movementDegree = 0;
     this.rotation = 0;
+    this.legRotation = 0;
     this.weapon = {
       height: 30,
       width: 5,
@@ -209,10 +229,13 @@ class Character {
       y: -5,
       rotation: degrees_to_radians(0),
     };
+    this.Weapon = false;
 
     characters.push(this);
   }
   show(direction) {
+    if (this.Weapon !== false) {
+    }
     let spriteWidth = 1200 / 8;
     let spriteHeight = 1015 / 7;
     this.leftLeg.y = 10 * Math.sin(this.movementDegree);
@@ -235,6 +258,8 @@ class Character {
     }
     ctx.save();
     ctx.translate(this.pos.x, this.pos.y);
+    ctx.save();
+    ctx.rotate(this.legRotation);
 
     // left leg
     ctx.drawImage(
@@ -261,6 +286,8 @@ class Character {
       this.size,
       this.size
     );
+    ctx.restore();
+
     ctx.rotate(direction + Math.PI / 2 + this.rotation);
     // Right Arm
     ctx.save();
@@ -340,30 +367,57 @@ class Bullet {
   endDist = 0;
   direction = 0;
   startPos = 0;
-  constructor(startPos, endPos, direction) {
+  constructor(startPos, endPos, direction, type, Object) {
     this.startPos = startPos;
     this.endDist = dist(startPos, endPos);
     this.pos.x = startPos.x + Math.cos(direction) * 20;
     this.pos.y = startPos.y + Math.sin(direction) * 20;
     this.direction = direction;
+    this.type = type;
+    this.speed = 50;
+    this.endPos = endPos;
+    this.Object = Object;
     bullets.push(this);
   }
   show() {
-    if (dist(this.startPos, this.pos) > this.endDist) {
-      bullets.splice(bullets.indexOf(this), 1);
-    } else {
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "red";
+    if (this.type === "bullet") {
+      if (dist(this.startPos, this.pos) > this.endDist) {
+        bullets.splice(bullets.indexOf(this), 1);
+      } else {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "red";
 
-      ctx.beginPath();
-      ctx.moveTo(this.pos.x, this.pos.y);
-      ctx.lineTo(
-        (this.pos.x += Math.cos(this.direction) * 7),
-        (this.pos.y += Math.sin(this.direction) * 7)
-      );
-      ctx.stroke();
-      this.pos.x += Math.cos(this.direction) * 50;
-      this.pos.y += Math.sin(this.direction) * 50;
+        ctx.beginPath();
+        ctx.moveTo(this.pos.x, this.pos.y);
+        ctx.lineTo(
+          (this.pos.x += Math.cos(this.direction) * 7),
+          (this.pos.y += Math.sin(this.direction) * 7)
+        );
+        ctx.stroke();
+        this.pos.x += Math.cos(this.direction) * this.speed;
+        this.pos.y += Math.sin(this.direction) * this.speed;
+      }
+    } else {
+      if (dist(this.startPos, this.pos) > this.endDist) {
+        this.Object.pos.x = this.endPos.x;
+        this.Object.pos.y = this.endPos.y;
+        this.Object.onGround = true;
+        bullets.splice(bullets.indexOf(this), 1);
+      } else {
+        ctx.strokeStyle = "red";
+
+        ctx.beginPath();
+        ctx.fillStyle = "red";
+        ctx.rect(
+          (this.pos.x += Math.cos(this.direction) * 7),
+          (this.pos.y += Math.sin(this.direction) * 7),
+          20,
+          20
+        );
+        ctx.fill();
+        this.pos.x += Math.cos(this.direction) * 10;
+        this.pos.y += Math.sin(this.direction) * 10;
+      }
     }
   }
 }
@@ -501,6 +555,32 @@ function rayCast(start, dir) {
 
   return [hitObject, hitPos];
 }
+
+class weapon {
+  pos = {
+    x: 0,
+    y: 0,
+  };
+  constructor(fireRate, accuracy, Ammo, x, y, texture) {
+    (this.fireRate = fireRate),
+      (this.accuracy = accuracy),
+      (this.Ammo = Ammo),
+      (this.pos.x = x),
+      (this.pos.y = y),
+      (this.texture = texture);
+    this.onGround = true;
+    items.push(this);
+  }
+  show() {
+    if (this.onGround === true) {
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.rect(this.pos.x - 10, this.pos.y - 10, 20, 20);
+      ctx.fill();
+    }
+  }
+}
+
 // prettier-ignore
 let gameMap = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
@@ -566,30 +646,49 @@ function drawMap(gameMap) {
 }
 drawMap(gameMap);
 
-function shoot(Object, Dir) {
-  if (Object.Ammo > 0) {
-    Object.Ammo -= 1;
-    console.log(Object.Ammo);
-    Rays = [];
-    hitObject = rayCast(Object, Dir);
-    if (hitObject[0] !== undefined) {
-      new Bullet(Player.pos, hitPos, Dir);
-    }
+function throwWeapon(Object) {
+  // Object = items[items.indexOf(Object)];
+  hitObject = rayCast(Player, Dir(Player.pos, mousePos));
+  if (5 === 5) {
+    new Bullet(
+      Player.pos,
+      hitObject[1],
+      Dir(Player.pos, mousePos),
+      "throw",
+      Object
+    );
+  }
+  Player.Weapon = false;
+  items.push(Object);
+}
 
-    hitObject[0].health -= 100;
-    console.log(hitObject[0].health);
-    hit = new rayHit(hitPos.x, hitPos.y, 5, 5);
-  } else {
-    console.log("Out of ammo");
+function shoot(Object, Dir) {
+  if (Object.Weapon !== false) {
+    if (Object.Ammo > 0) {
+      Object.Ammo -= 1;
+      console.log(Object.Ammo);
+      Rays = [];
+      hitObject = rayCast(Object, Dir);
+      if (hitObject[0] !== undefined) {
+        new Bullet(Player.pos, hitPos, Dir, "bullet");
+      }
+
+      hitObject[0].health -= 100;
+      console.log(hitObject[0].health);
+      hit = new rayHit(hitPos.x, hitPos.y, 5, 5);
+    } else {
+      console.log("Out of ammo");
+    }
   }
 }
 
 let Player = new Character(centerX, centerY, 40, 40);
+
 let Map = new map();
+let pistol = new weapon(100, 100, 20, centerX + 100, centerY);
 // let Enemy = new Character(800, 300, 30, 30);
 // let wall1 = new Structure(400, 400, 100, 20, textureCobble);
 // let wall2 = new Structure(459, 360, 20, 100, textureCobble);
-
 function collisionDetection(thisObject, positionX, positionY) {
   for (let i = 0; i < structures.length; i++) {
     let xCollision = false;
@@ -633,35 +732,37 @@ function moveCamera() {
 }
 
 function moveCharacter(Object, friction) {
-  let walking = false;
   if (keys["w"]) {
     if (Object.velocity.y > -Object.speed) {
       Object.velocity.y--;
-      walking = true;
     }
   }
   if (keys["a"]) {
     if (Object.velocity.x > -Object.speed) {
       Object.velocity.x--;
-      walking = true;
     }
   }
   if (keys["s"]) {
     if (Object.velocity.y < Object.speed) {
       Object.velocity.y++;
-      walking = true;
     }
   }
   if (keys["d"]) {
     if (Object.velocity.x < Object.speed) {
       Object.velocity.x++;
-      walking = true;
     }
   }
 
-  if (walking === true) {
-    Player.movementDegree += 1;
-  }
+  Object.legRotation =
+    Dir(
+      {
+        x: Object.velocity.x + Object.pos.x,
+        y: Object.velocity.y + Object.pos.y,
+      },
+      Object.pos
+    ) -
+    Math.PI / 2;
+
   if (
     collisionDetection(
       Player,
@@ -696,9 +797,13 @@ canvas.addEventListener("mousedown", function (e) {
 canvas.addEventListener("mouseup", function (e) {
   mouseDown = false;
 });
-
 function update() {
   requestAnimationFrame(update);
+  if (keys["w"] || keys["a"] || keys["s"] || keys["d"]) {
+    Player.movementDegree += 0.3;
+  } else {
+    Player.movementDegree = 0;
+  }
 
   mousePos = {
     x: mouse.x + translateAmountX,
