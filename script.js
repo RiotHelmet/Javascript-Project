@@ -1009,10 +1009,10 @@ class body {
 }
 
 // let Garry = new Enemy(100, 100, 3);
-let Garry2 = new Enemy(300, 100, 3);
-let Garry3 = new Enemy(200, 100, 3);
-let Garry4 = new Enemy(100, 200, 3);
-let Garry5 = new Enemy(100, 300, 3);
+let Garry2 = new Enemy(300, 100, 1);
+let Garry3 = new Enemy(200, 100, 1);
+let Garry4 = new Enemy(100, 200, 1);
+let Garry5 = new Enemy(100, 300, 1);
 
 function enemyShoot(Object, Dir) {
   if (Object.Ammo > 0) {
