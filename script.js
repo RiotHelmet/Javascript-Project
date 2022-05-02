@@ -790,6 +790,7 @@ class Enemy {
     shootableObjects.push(this);
     this.collisionBoxSize = 20;
     this.speed = 3;
+    this.clearWalking = false;
     // Enemy
     this.direction = 0;
     this.walking = false;
@@ -839,6 +840,8 @@ class Enemy {
         if (this.spotDelay % (this.Difficulty * 10) === 0) {
           this.spotted = true;
         }
+      } else {
+        this.spotted = false;
       }
     }
     if (this.spotDelay > 0) {
@@ -1115,11 +1118,9 @@ function throwWeapon(Object) {
 }
 
 function shoot(Object, Dir) {
-//   enemies.forEach((Object) => {
-//     Object.spotDelay += 1;
-//   }); 
-  // You can Enable the thing above if you want to, I wouldnt recommend it lol.
-  
+  enemies.forEach((Object) => {
+    Object.spotDelay += 1;
+  });
   if (Object.Weapon.Ammo > 0) {
     Object.Weapon.Ammo -= 1;
     console.log(Object.Weapon.Ammo);
@@ -1519,9 +1520,10 @@ function enemyFollowPath(enemy, goal) {
     enemy.walking = true;
     let step = path.length - 1;
     walking = setInterval(function () {
-      if (dist(enemy.pos, path[0]) < 10) {
+      if (dist(enemy.pos, path[0]) < 10 || enemy.clearWalking === true) {
         clearInterval(walking);
         enemy.walking = false;
+        enemy.clearWalking = false;
       }
       let direction = Dir(enemy.pos, path[step]);
       enemy.direction = direction;
@@ -1553,7 +1555,6 @@ function enemyFollowPath(enemy, goal) {
     return;
   }
 }
-
 function update() {
   requestAnimationFrame(update);
 
@@ -1563,6 +1564,12 @@ function update() {
     } else {
       Player.movementDegree = 0;
     }
+    // if (delay % 300 === 0) {
+    //   enemies.forEach((Object) => {
+    //     Object.clearWalking = true;
+    //     Object.walking = false;
+    //   });
+    // }
     // drawPath();
     mousePos = {
       x: mouse.x + translateAmountX,
