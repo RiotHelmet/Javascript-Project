@@ -1115,9 +1115,11 @@ function throwWeapon(Object) {
 }
 
 function shoot(Object, Dir) {
-  enemies.forEach((Object) => {
-    Object.spotDelay += 1;
-  });
+//   enemies.forEach((Object) => {
+//     Object.spotDelay += 1;
+//   }); 
+  // You can Enable the thing above if you want to, I wouldnt recommend it lol.
+  
   if (Object.Weapon.Ammo > 0) {
     Object.Weapon.Ammo -= 1;
     console.log(Object.Weapon.Ammo);
