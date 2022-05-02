@@ -123,16 +123,12 @@ class map {
     ctx.save();
     ctx.translate(-translateAmountX, -translateAmountY);
 
-    ctx.drawImage(textureGrass, 0, 0, 2 * this.width, this.height);
+    // ctx.drawImage(textureMap, 0, 0, 2 * this.width * 1.5, this.height * 1.5);
     if (Player.Weapon !== false) {
       if (keys["f"]) {
         throwWeapon(Player.Weapon);
       }
     }
-
-    enemies.forEach((Object) => {
-      Object.show();
-    });
 
     items.forEach((Object) => {
       if (dist(Player.pos, Object.pos) < 100) {
@@ -182,6 +178,10 @@ class map {
         )
       );
     });
+
+    enemies.forEach((Object) => {
+      Object.show();
+    });
     ctx.restore();
   }
 }
@@ -202,6 +202,7 @@ class Character {
     this.pos.y = y;
     this.width = width;
     this.height = height;
+    this.collisionBoxSize = 50;
     this.size = 50;
     // character
     this.torsoWidth = this.width;
@@ -593,10 +594,13 @@ class Structure {
     x: 0,
     y: 0,
   };
-  health = 100;
-  constructor(x, y, height, width, texture, hitbox) {
+  constructor(x, y, height, width, texture, hitbox, shootableBool) {
     this.pos.x = x;
     this.pos.y = y;
+    this.health = Infinity;
+    if (shootableBool === true) {
+      this.shootable === 100;
+    }
     this.width = width;
     this.height = height;
     this.texture = texture;
@@ -784,6 +788,7 @@ class Enemy {
     enemies.push(this);
     this.Ammo = 50;
     shootableObjects.push(this);
+    this.collisionBoxSize = 20;
     this.speed = 3;
     // Enemy
     this.direction = 0;
@@ -828,19 +833,17 @@ class Enemy {
       shootableObjects.splice(shootableObjects.indexOf(this), 1);
       enemies.splice(enemies.indexOf(this), 1);
     }
-
-    if (this.delay % 2 === 0) {
+    if (this.delay % 5 === 0) {
       if (rayCast(this, Dir(this.pos, Player.pos))[0] === Player) {
         this.spotDelay += 1;
         if (this.spotDelay % (this.Difficulty * 10) === 0) {
           this.spotted = true;
-          enemyFollowPath(this, pathFind(Garry.pos, Player.pos));
         }
-      } else {
-        this.spotted = false;
       }
     }
-
+    if (this.spotDelay > 0) {
+      enemyFollowPath(this, Player);
+    }
     if (this.spotted === true) {
       if (this.delay % 20 === 0) {
         console.log(this.spotDelay);
@@ -1005,9 +1008,11 @@ class body {
   }
 }
 
-let Garry = new Enemy(100, 100, 3);
-let Garry2 = new Enemy(200, 100, 3);
-// let Garry3 = new Enemy(300, 100, 3);
+// let Garry = new Enemy(100, 100, 3);
+let Garry2 = new Enemy(300, 100, 3);
+let Garry3 = new Enemy(200, 100, 3);
+let Garry4 = new Enemy(100, 200, 3);
+let Garry5 = new Enemy(100, 300, 3);
 
 function enemyShoot(Object, Dir) {
   if (Object.Ammo > 0) {
@@ -1027,36 +1032,36 @@ function enemyShoot(Object, Dir) {
 
 // prettier-ignore
 let gameMap = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
-  [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,],
 ];
 let endPos;
 function drawMap(gameMap) {
@@ -1070,7 +1075,7 @@ function drawMap(gameMap) {
             canvas.width / gameMap[0].length / 2,
           canvas.width / gameMap.length,
           canvas.height / gameMap[0].length,
-          textureCobble,
+          "black",
           true
         );
       } else if (gameMap[x][y] === 2) {
@@ -1110,6 +1115,9 @@ function throwWeapon(Object) {
 }
 
 function shoot(Object, Dir) {
+  enemies.forEach((Object) => {
+    Object.spotDelay += 1;
+  });
   if (Object.Weapon.Ammo > 0) {
     Object.Weapon.Ammo -= 1;
     console.log(Object.Weapon.Ammo);
@@ -1142,16 +1150,21 @@ function collisionDetection(thisObject, positionX, positionY) {
     if (thisObject !== Object) {
       if (Object.hitBox === true) {
         if (
-          positionX < Object.pos.x + Object.width / 2 + thisObject.width / 2 &&
-          positionX > Object.pos.x - Object.width / 2 - thisObject.width / 2
+          positionX <
+            Object.pos.x + Object.width / 2 + thisObject.collisionBoxSize / 2 &&
+          positionX >
+            Object.pos.x - Object.width / 2 - thisObject.collisionBoxSize / 2
         ) {
           // console.log("Collision X")
           xCollision = true;
         }
         if (
           positionY <
-            Object.pos.y + Object.height / 2 + thisObject.height / 2 &&
-          positionY > Object.pos.y - Object.height / 2 - thisObject.height / 2
+            Object.pos.y +
+              Object.height / 2 +
+              thisObject.collisionBoxSize / 2 &&
+          positionY >
+            Object.pos.y - Object.height / 2 - thisObject.collisionBoxSize / 2
         ) {
           // console.log("Collision Y")
           yCollision = true;
@@ -1498,8 +1511,9 @@ function drawPath() {
     }
   }
 }
-function enemyFollowPath(enemy, path) {
+function enemyFollowPath(enemy, goal) {
   if (enemy.walking === false) {
+    path = pathFind(enemy.pos, goal.pos);
     enemy.walking = true;
     let step = path.length - 1;
     walking = setInterval(function () {
@@ -1513,8 +1527,25 @@ function enemyFollowPath(enemy, path) {
       if (dist(enemy.pos, path[step]) < 10) {
         step--;
       }
-      enemy.pos.x += Math.cos(direction) * enemy.speed;
-      enemy.pos.y += Math.sin(direction) * enemy.speed;
+      if (
+        collisionDetection(
+          enemy,
+          enemy.pos.x,
+          enemy.pos.y + Math.sin(direction) * enemy.speed
+        ) === false
+      ) {
+        enemy.pos.y += Math.sin(direction) * enemy.speed;
+      }
+
+      if (
+        collisionDetection(
+          enemy,
+          enemy.pos.x + Math.cos(direction) * enemy.speed,
+          enemy.pos.y
+        ) === false
+      ) {
+        enemy.pos.x += Math.cos(direction) * enemy.speed;
+      }
     }, 10);
   } else {
     return;
@@ -1530,7 +1561,7 @@ function update() {
     } else {
       Player.movementDegree = 0;
     }
-
+    // drawPath();
     mousePos = {
       x: mouse.x + translateAmountX,
       y: mouse.y + translateAmountY,
