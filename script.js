@@ -96,6 +96,7 @@ class Line {
   }
   show() {
     ctx.strokeStyle = "blue";
+    ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.moveTo(this.startPos.x, this.startPos.y);
     ctx.lineTo(this.endPos.x, this.endPos.y);
@@ -124,11 +125,17 @@ class map {
     ctx.translate(-translateAmountX, -translateAmountY);
 
     // ctx.drawImage(textureMap, 0, 0, 2 * this.width * 1.5, this.height * 1.5);
+    ctx.fillStyle = "darkslategrey";
+    ctx.rect(0, 0, 2 * this.width * 1.5, this.height * 1.5);
+    ctx.fill();
     if (Player.Weapon !== false) {
       if (keys["f"]) {
         throwWeapon(Player.Weapon);
       }
     }
+    particles.forEach((Object) => {
+      Object.show();
+    });
 
     items.forEach((Object) => {
       if (dist(Player.pos, Object.pos) < 100) {
@@ -156,9 +163,6 @@ class map {
       }
     });
 
-    particles.forEach((Object) => {
-      Object.show();
-    });
     {
       lines.forEach((Object) => {
         Object.show();
@@ -778,7 +782,7 @@ class Enemy {
     y: 0,
   };
   constructor(x, y, difficulty) {
-    this.Difficulty = difficulty;
+    this.difficulty = difficulty;
     this.pos.x = x;
     this.pos.y = y;
     this.size = 50;
@@ -837,7 +841,7 @@ class Enemy {
     if (this.delay % 5 === 0) {
       if (rayCast(this, Dir(this.pos, Player.pos))[0] === Player) {
         this.spotDelay += 1;
-        if (this.spotDelay % (this.Difficulty * 10) === 0) {
+        if (this.spotDelay % (this.difficulty * 10) === 0) {
           this.spotted = true;
         }
       } else {
@@ -855,7 +859,7 @@ class Enemy {
           this,
           Dir(this.pos, Player.pos) +
             degrees_to_radians(
-              getRndInteger(-this.Difficulty * 5, this.Difficulty * 5)
+              getRndInteger(-this.difficulty * 5, this.difficulty * 5)
             )
         );
       }
@@ -1014,8 +1018,8 @@ class body {
 // let Garry = new Enemy(100, 100, 3);
 let Garry2 = new Enemy(300, 100, 1);
 let Garry3 = new Enemy(200, 100, 1);
-let Garry4 = new Enemy(100, 200, 1);
-let Garry5 = new Enemy(100, 300, 1);
+// let Garry4 = new Enemy(100, 200, 1);
+// let Garry5 = new Enemy(100, 300, 1);
 
 function enemyShoot(Object, Dir) {
   if (Object.Ammo > 0) {
@@ -1119,15 +1123,28 @@ function throwWeapon(Object) {
 
 function shoot(Object, Dir) {
   enemies.forEach((Object) => {
-    Object.spotDelay += 1;
+    if (Object.health < 0) {
+      enemies.forEach((Object) => {
+        Object.spotDelay += 1;
+      });
+    }
   });
+
   if (Object.Weapon.Ammo > 0) {
     Object.Weapon.Ammo -= 1;
     console.log(Object.Weapon.Ammo);
     Rays = [];
     hitObject = rayCast(Object, Dir, `${Object}`);
     if (hitObject[0] !== undefined) {
-      new particle(Player.pos, hitPos, Dir, "bullet");
+      new particle(
+        {
+          x: Player.pos.x,
+          y: Player.pos.y,
+        },
+        hitPos,
+        Dir,
+        "bullet"
+      );
       new particle(Player.pos, hitPos, Dir, "casing");
     }
 
@@ -1280,7 +1297,11 @@ document.body.addEventListener("keydown", function (e) {
   keys[e.key] = true;
   if (game === true) {
     if (e.key === "h") {
-      enemyFollowPath(Garry, pathFind(Garry.pos, Player.pos));
+      if (showHitboxes === false) {
+        showHitboxes = true;
+      } else {
+        showHitboxes = false;
+      }
     }
   }
 });
@@ -1500,23 +1521,29 @@ function pathFind(start, goal) {
   }
 }
 
-function drawPath() {
+function drawPath(path) {
   lines = [];
-  let linePoints = pathFind(Player.pos, Garry.pos);
-  for (let i = 0; i < linePoints.length; i++) {
-    if (i < linePoints.length - 1) {
-      new Line(
-        linePoints[i].x,
-        linePoints[i].y,
-        linePoints[i + 1].x,
-        linePoints[i + 1].y
-      );
+  {
+    let linePoints = path;
+    for (let i = 0; i < linePoints.length; i++) {
+      if (i < linePoints.length - 1) {
+        new Line(
+          linePoints[i].x,
+          linePoints[i].y,
+          linePoints[i + 1].x,
+          linePoints[i + 1].y
+        );
+      }
     }
   }
 }
 function enemyFollowPath(enemy, goal) {
   if (enemy.walking === false) {
     path = pathFind(enemy.pos, goal.pos);
+    if (showHitboxes === true) {
+      drawPath(path);
+    }
+
     enemy.walking = true;
     let step = path.length - 1;
     walking = setInterval(function () {
@@ -1526,7 +1553,9 @@ function enemyFollowPath(enemy, goal) {
         enemy.clearWalking = false;
       }
       let direction = Dir(enemy.pos, path[step]);
-      enemy.direction = direction;
+      if (enemy.spotted === false) {
+        enemy.direction = direction;
+      }
       enemy.movementDegree += 0.1;
       if (dist(enemy.pos, path[step]) < 10) {
         step--;
@@ -1570,7 +1599,6 @@ function update() {
     //     Object.walking = false;
     //   });
     // }
-    // drawPath();
     mousePos = {
       x: mouse.x + translateAmountX,
       y: mouse.y + translateAmountY,
