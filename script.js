@@ -790,7 +790,7 @@ class Enemy {
     this.height = this.size;
     this.health = 100;
     enemies.push(this);
-    this.Ammo = 50;
+    this.ammo = 50;
     shootableObjects.push(this);
     this.collisionBoxSize = 20;
     this.speed = 3;
@@ -831,6 +831,7 @@ class Enemy {
     this.delay = 0;
     this.spotDelay = 0;
     this.spotted = false;
+    this.waiting = false;
   }
   show() {
     if (this.health < 1) {
@@ -838,19 +839,26 @@ class Enemy {
       shootableObjects.splice(shootableObjects.indexOf(this), 1);
       enemies.splice(enemies.indexOf(this), 1);
     }
-    if (this.delay % 5 === 0) {
-      if (rayCast(this, Dir(this.pos, Player.pos))[0] === Player) {
-        this.spotDelay += 1;
-        if (this.spotDelay % (this.difficulty * 10) === 0) {
-          this.spotted = true;
+
+    if (this.waiting === false) {
+      this.waiting = true;
+      setTimeout(() => {
+        if (rayCast(this, Dir(this.pos, Player.pos))[0] === Player) {
+          this.spotDelay += 1;
+          setTimeout(() => {
+            this.spotted = true;
+          }, 500);
+        } else {
+          this.spotted = false;
         }
-      } else {
-        this.spotted = false;
-      }
+        this.waiting = false;
+      }, 100);
     }
+
     if (this.spotDelay > 0) {
       enemyFollowPath(this, Player);
     }
+
     if (this.spotted === true) {
       if (this.delay % 20 === 0) {
         console.log(this.spotDelay);
@@ -1015,15 +1023,15 @@ class body {
   }
 }
 
-// let Garry = new Enemy(100, 100, 3);
-let Garry2 = new Enemy(300, 100, 1);
-let Garry3 = new Enemy(200, 100, 1);
+let Garry = new Enemy(100, 100, 3);
+// let Garry2 = new Enemy(300, 100, 1);
+// let Garry3 = new Enemy(200, 100, 1);
 // let Garry4 = new Enemy(100, 200, 1);
 // let Garry5 = new Enemy(100, 300, 1);
 
 function enemyShoot(Object, Dir) {
-  if (Object.Ammo > 0) {
-    Object.Ammo -= 1;
+  if (Object.ammo > 0) {
+    Object.ammo -= 1;
     Rays = [];
     hitObject = rayCast(Object, Dir, `${Object}`);
     if (hitObject[0] !== undefined) {
@@ -1540,6 +1548,7 @@ function drawPath(path) {
 function enemyFollowPath(enemy, goal) {
   if (enemy.walking === false) {
     path = pathFind(enemy.pos, goal.pos);
+    console.log(path);
     if (showHitboxes === true) {
       drawPath(path);
     }
