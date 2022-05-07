@@ -981,24 +981,27 @@ class body {
     this.rotate = rotation;
     objects.push(this);
     this.velocity = 2;
-    this.bloodSize = 1;
+    this.bloodSize = 0;
   }
   show() {
+    if (this.bloodSize < 3) {
+      new flowers({ x: this.x, y: this.y });
+    }
     this.x -= Math.cos(this.rotate) * this.velocity;
     this.y -= Math.sin(this.rotate) * this.velocity;
     ctx.fillStyle = "red";
     ctx.beginPath();
-    ctx.drawImage(
-      texturePlayer,
-      4 * spriteWidth,
-      2 * spriteHeight,
-      spriteWidth,
-      spriteHeight,
-      this.x - this.bloodSize / 2,
-      this.y - this.bloodSize / 2,
-      this.bloodSize,
-      this.bloodSize
-    );
+    // ctx.drawImage(
+    //   texturePlayer,
+    //   4 * spriteWidth,
+    //   2 * spriteHeight,
+    //   spriteWidth,
+    //   spriteHeight,
+    //   this.x - this.bloodSize / 2,
+    //   this.y - this.bloodSize / 2,
+    //   this.bloodSize,
+    //   this.bloodSize
+    // );
     ctx.fill();
     ctx.save();
     ctx.translate(this.x, this.y);
@@ -1017,9 +1020,10 @@ class body {
     ctx.translate(-this.x, -this.y);
     ctx.restore();
     this.velocity *= 0.9;
-    if (this.bloodSize < 50) {
-      this.bloodSize += 0.08;
-    }
+    // if (this.bloodSize < 50) {
+    //   this.bloodSize += 0.08;
+    // }
+    this.bloodSize++;
   }
 }
 
@@ -1379,6 +1383,66 @@ function doesInclude(parent, x, y) {
   }
   return false;
 }
+
+class foliage {
+  constructor(position, type) {
+    this.pos = { x: position.x, y: position.y };
+    this.size = 0;
+    if (type === "flower") {
+      this.type = 5;
+    } else {
+      this.type = 6;
+    }
+    this.rotation = degrees_to_radians(getRndInteger(-180, 180));
+    objects.push(this);
+  }
+  show() {
+    if (this.size < 50) {
+      this.size++;
+    }
+    ctx.save();
+    ctx.translate(this.pos.x, this.pos.y);
+    ctx.rotate(this.rotation);
+    ctx.drawImage(
+      texturePlayer,
+      this.type * spriteWidth,
+      1 * spriteHeight,
+      spriteWidth,
+      spriteHeight,
+      -this.size / 2,
+      -this.size / 2,
+      this.size,
+      this.size
+    );
+    ctx.translate(-this.pos.x, -this.pos.y);
+    ctx.restore();
+  }
+}
+
+function flowers(position) {
+  let offset = 50;
+  let amount = 10;
+  let i = 0;
+  let growing = setInterval(() => {
+    console.log("yo");
+    if (i > amount) {
+      clearInterval(growing);
+    }
+    foliagePos = {
+      x: position.x + getRndInteger(-offset, offset),
+      y: position.y + getRndInteger(-offset, offset),
+    };
+    console.log(foliagePos);
+    new foliage(foliagePos, "flower");
+    foliagePos = {
+      x: position.x + getRndInteger(-offset, offset),
+      y: position.y + getRndInteger(-offset, offset),
+    };
+    new foliage(foliagePos, "grass");
+  }, 1000);
+}
+
+// flowers({ x: centerX, y: centerY });
 
 //Pathfinding
 
